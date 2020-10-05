@@ -6,7 +6,7 @@ from event import Event
 
 # Konami code
 konami_code = ["up_arrow_button", "up_arrow_button", "down_arrow_button", "down_arrow_button", "left_arrow_button",
-               "right_arrow_button", "left_arrow_button", "right_arrow_button", "share_button", "option_button"]
+               "right_arrow_button", "left_arrow_button", "right_arrow_button", "share_button", "options_button"]
 
 
 def check_for(sub, full, start_index):
@@ -171,7 +171,7 @@ class Controller(Actions):
         elif event.R2_released():
             self.on_R2_release()
         elif event.options_pressed():
-            self.event_history.append("option_button")
+            self.event_history.append("options_button")
             self.on_options_press()
         elif event.options_released():
             self.on_options_release()

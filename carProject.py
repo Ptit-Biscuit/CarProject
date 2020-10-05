@@ -10,28 +10,32 @@ backRight = Servo(20)
 backLeft = Servo(26)
 steering = AngularServo(21, min_angle=-45, max_angle=45)
 
-def mapFromTo(x, a, b, c, d):
-    return (x-a)/(b-a)*(d-c)+c
 
-def onConnect():
+def map_from_to(x, a, b, c, d):
+    return (x - a) / (b - a) * (d - c) + c
+
+
+def on_connect():
     frontRight.min()
     frontLeft.min()
     backRight.min()
     backLeft.min()
     steering.angle = 0
 
-def onDisconnect():
-    #call("sudo shutdown -P 0", shell=True)
+
+def on_disconnect():
+    # call("sudo shutdown -P 0", shell=True)
     pass
 
+
 class MyController(Controller):
-    # init
+
     def __init__(self, **kwargs):
         Controller.__init__(self, **kwargs)
 
     # R2 range forward acceleration
     def on_R2_press(self, value):
-        forward = mapFromTo(value, -32767, 32767, 0, 1)
+        forward = map_from_to(value, -32767, 32767, 0, 1)
         frontRight.value = forward
         frontLeft.value = forward
 
@@ -41,7 +45,7 @@ class MyController(Controller):
 
     # L2 range backward acceleration
     def on_L2_press(self, value):
-        backward = mapFromTo(value, -32767, 32767, 0, 1)
+        backward = map_from_to(value, -32767, 32767, 0, 1)
         backRight.value = backward
         backLeft.value = backward
 
@@ -54,10 +58,11 @@ class MyController(Controller):
         steering.angle = 0
 
     def on_R3_left(self, value):
-        steering.angle = mapFromTo(value, 0, -32767, 0, steering.min_angle)
+        steering.angle = map_from_to(value, 0, -32767, 0, steering.min_angle)
 
     def on_R3_right(self, value):
-        steering.angle = mapFromTo(value, 0, 32767, 0, steering.max_angle)
+        steering.angle = map_from_to(value, 0, 32767, 0, steering.max_angle)
+
 
 controller = MyController(interface="/dev/input/js0")
-controller.listen(on_connect=onConnect, on_disconnect=onDisconnect)
+controller.listen(on_connect=on_connect, on_disconnect=on_disconnect)

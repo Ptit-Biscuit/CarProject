@@ -6,17 +6,11 @@ from event import Event
 
 # Konami code
 konami_code = ["up_arrow_button", "up_arrow_button", "down_arrow_button", "down_arrow_button", "left_arrow_button",
-              "right_arrow_button", "left_arrow_button", "right_arrow_button", "share_button", "option_button"]
-last_konami_index = -1
+               "right_arrow_button", "left_arrow_button", "right_arrow_button", "share_button", "option_button"]
 
-def check_for(l1, l2, start_index):
-    print(start_index)
-    for i in range(start_index, len(l2) - len(l1) + 1):
-        print(i, [l2[_] for _ in range(i, i + len(l1))])
-        if [l2[_] for _ in range(i, i + len(l1))] == l1:
-            last_konami_index = i + 1
-            return True
-    return False
+
+def check_for(sub, full, start_index):
+    return [start for start in range(start_index, len(full) - len(sub) + 1) if sub == full[start:start + len(sub)]]
 
 
 class Controller(Actions):
@@ -24,7 +18,7 @@ class Controller(Actions):
     def __init__(self, interface, event_definition=None, event_format=None):
         """
         Initiate controller instance that is capable of listening to all events on specified input interface
-        :param interface: STRING aka /dev/input/js0 or any other PS4 Duelshock controller interface.
+        :param interface: STRING aka /dev/input/js0 or any other PS4 Dualshock controller interface.
                           You can see all available interfaces with a command "ls -la /dev/input/"
         """
         Actions.__init__(self)
@@ -32,11 +26,12 @@ class Controller(Actions):
         self.is_connected = False
         self.interface = interface
         self.debug = False  # If you want to see raw event stream, set this to True.
-        self.black_listed_buttons = []  # set a list of blocked buttons if you dont want to process their events
+        self.black_listed_buttons = []  # set a list of blocked buttons if you don't want to process their events
         self.event_definition = event_definition if event_definition else Event
         self.event_format = event_format if event_format else "LhBB"
         self.event_size = struct.calcsize(self.event_format)
         self.event_history = []
+        self.konami_index = 0
 
     def listen(self, timeout=30, on_connect=None, on_disconnect=None, on_konami=None):
         """
@@ -46,9 +41,10 @@ class Controller(Actions):
                         If self.interface does not become available in N seconds, the script will exit with exit code 1.
         :param on_connect: function object, allows to register a call back when connection is established
         :param on_disconnect: function object, allows to register a call back when connection is lost
-        :param on_konami: function object, alows to register a call back when konami command is played
+        :param on_konami: function object, allows to register a call back when konami command is played
         :return: None
         """
+
         def on_disconnect_callback():
             self.is_connected = False
             if on_disconnect is not None:
@@ -92,9 +88,10 @@ class Controller(Actions):
                 (*tv_sec, value, button_type, button_id) = struct.unpack(self.event_format, event)
                 if self.debug:
                     print("button_id: {} button_type: {} value: {}".format(button_id, button_type, value))
-                if button_id not in self.black_listed_buttons:
-                    self.__handle_event(button_id=button_id, button_type=button_type, value=value)
-                if check_for(konami_code, self.event_history, last_konami_index):
+                self.__handle_event(button_id=button_id, button_type=button_type, value=value)
+                check = check_for(konami_code, self.event_history, self.konami_index)
+                if len(check) != 0:
+                    self.konami_index = check[0] + 1
                     on_konami_callback()
                 event = read_events()
         except KeyboardInterrupt:
@@ -103,10 +100,7 @@ class Controller(Actions):
             exit(1)
 
     def __handle_event(self, button_id, button_type, value):
-
-        event = self.event_definition(button_id=button_id,
-                                      button_type=button_type,
-                                      value=value)
+        event = self.event_definition(button_id=button_id, button_type=button_type, value=value)
 
         if event.R3_event():
             self.event_history.append("right_joystick")

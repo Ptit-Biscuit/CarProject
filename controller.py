@@ -4,10 +4,6 @@ import time
 from actions import Actions
 from event import Event
 
-# Konami code
-konami_code = ["up_arrow_button", "up_arrow_button", "down_arrow_button", "down_arrow_button", "left_arrow_button",
-               "right_arrow_button", "left_arrow_button", "right_arrow_button", "share_button", "options_button"]
-
 
 def check_for(sub, full, start_index):
     return [start for start in range(start_index, len(full) - len(sub) + 1) if sub == full[start:start + len(sub)]]
@@ -31,9 +27,8 @@ class Controller(Actions):
         self.event_format = event_format if event_format else "LhBB"
         self.event_size = struct.calcsize(self.event_format)
         self.event_history = []
-        self.konami_index = 0
 
-    def listen(self, timeout=30, on_connect=None, on_disconnect=None, on_konami=None):
+    def listen(self, timeout=30, on_connect=None, on_disconnect=None, special_inputs=None):
         """
         Start listening for events on a given self.interface
         :param timeout: INT, seconds. How long you want to wait for the self.interface.
@@ -41,7 +36,8 @@ class Controller(Actions):
                         If self.interface does not become available in N seconds, the script will exit with exit code 1.
         :param on_connect: function object, allows to register a call back when connection is established
         :param on_disconnect: function object, allows to register a call back when connection is lost
-        :param on_konami: function object, allows to register a call back when konami command is played
+        :param special_inputs: list, allows to register specials inputs with callbacks for specials inputs
+                               (e.g konami command prints "Hello World!")
         :return: None
         """
 
@@ -54,12 +50,6 @@ class Controller(Actions):
             self.is_connected = True
             if on_connect is not None:
                 on_connect()
-
-        def on_konami_callback():
-            if on_konami is not None:
-                on_konami()
-            else:
-                print("konami command detected!")
 
         def wait_for_interface():
             print("Waiting for interface: {} to become available . . .".format(self.interface))
@@ -83,16 +73,19 @@ class Controller(Actions):
         wait_for_interface()
         try:
             _file = open(self.interface, "rb")
+            if special_inputs is None:
+                special_inputs = []
             event = read_events()
             while not self.stop and event:
                 (*tv_sec, value, button_type, button_id) = struct.unpack(self.event_format, event)
                 if self.debug:
                     print("button_id: {} button_type: {} value: {}".format(button_id, button_type, value))
                 self.__handle_event(button_id=button_id, button_type=button_type, value=value)
-                check = check_for(konami_code, self.event_history, self.konami_index)
-                if len(check) != 0:
-                    self.konami_index = check[0] + 1
-                    on_konami_callback()
+                for _, special_input in enumerate(special_inputs):
+                    check = check_for(special_input[0], self.event_history, special_input[2])
+                    if len(check) != 0:
+                        special_input[2] = check[0] + 1
+                        special_input[1]()
                 event = read_events()
         except KeyboardInterrupt:
             print("\nExiting (Ctrl + C)")

@@ -62,33 +62,26 @@ class Controller(Actions):
             print("Timeout({} sec). Interface not available.".format(timeout))
             exit(1)
 
-        def read_events():
-            try:
-                return _file.read(self.event_size)
-            except IOError:
-                print("Interface lost. Device disconnected?")
-                on_disconnect_callback()
-                exit(1)
-
         wait_for_interface()
         try:
             _file = open(self.interface, "rb")
+            event = _file.read(self.event_size)
             if special_inputs is None:
                 special_inputs = []
-            event = read_events()
+            special_inputs_indexes = [0] * len(special_inputs)
             while not self.stop and event:
                 (*tv_sec, value, button_type, button_id) = struct.unpack(self.event_format, event)
                 if self.debug:
                     print("button_id: {} button_type: {} value: {}".format(button_id, button_type, value))
                 self.__handle_event(button_id=button_id, button_type=button_type, value=value)
-                for _, special_input in enumerate(special_inputs):
-                    check = check_for(special_input[0], self.event_history, special_input[2])
+                for i, special_input in enumerate(special_inputs):
+                    check = check_for(special_input["inputs"], self.event_history, special_inputs_indexes[i])
                     if len(check) != 0:
-                        special_input[2] = check[0] + 1
-                        special_input[1]()
-                event = read_events()
-        except KeyboardInterrupt:
-            print("\nExiting (Ctrl + C)")
+                        special_inputs_indexes[i] = check[0] + 1
+                        special_input["callback"]()
+                event = _file.read(self.event_size)
+        except (KeyboardInterrupt, IOError) as e:
+            print("Interface lost. Device disconnected?" if e is IOError else "\nExiting (Ctrl + C)")
             on_disconnect_callback()
             exit(1)
 
@@ -124,47 +117,47 @@ class Controller(Actions):
             elif event.L3_right():
                 self.on_L3_right(value)
         elif event.circle_pressed():
-            self.event_history.append("circle_button")
+            self.event_history.append("circle")
             self.on_circle_press()
         elif event.circle_released():
             self.on_circle_release()
         elif event.x_pressed():
-            self.event_history.append("x_button")
+            self.event_history.append("x")
             self.on_x_press()
         elif event.x_released():
             self.on_x_release()
         elif event.triangle_pressed():
-            self.event_history.append("triangle_button")
+            self.event_history.append("triangle")
             self.on_triangle_press()
         elif event.triangle_released():
             self.on_triangle_release()
         elif event.square_pressed():
-            self.event_history.append("square_button")
+            self.event_history.append("square")
             self.on_square_press()
         elif event.square_released():
             self.on_square_release()
         elif event.L1_pressed():
-            self.event_history.append("left_button_1")
+            self.event_history.append("L1")
             self.on_L1_press()
         elif event.L1_released():
             self.on_L1_release()
         elif event.L2_pressed():
-            self.event_history.append("left_button_2")
+            self.event_history.append("L2")
             self.on_L2_press(value)
         elif event.L2_released():
             self.on_L2_release()
         elif event.R1_pressed():
-            self.event_history.append("right_button_1")
+            self.event_history.append("R1")
             self.on_R1_press()
         elif event.R1_released():
             self.on_R1_release()
         elif event.R2_pressed():
-            self.event_history.append("right_button_2")
+            self.event_history.append("R2")
             self.on_R2_press(value)
         elif event.R2_released():
             self.on_R2_release()
         elif event.options_pressed():
-            self.event_history.append("options_button")
+            self.event_history.append("options")
             self.on_options_press()
         elif event.options_released():
             self.on_options_release()
@@ -173,34 +166,34 @@ class Controller(Actions):
         elif event.up_down_arrow_released():
             self.on_up_down_arrow_release()
         elif event.left_arrow_pressed():
-            self.event_history.append("left_arrow_button")
+            self.event_history.append("left")
             self.on_left_arrow_press()
         elif event.right_arrow_pressed():
-            self.event_history.append("right_arrow_button")
+            self.event_history.append("right")
             self.on_right_arrow_press()
         elif event.up_arrow_pressed():
-            self.event_history.append("up_arrow_button")
+            self.event_history.append("up")
             self.on_up_arrow_press()
         elif event.down_arrow_pressed():
-            self.event_history.append("down_arrow_button")
+            self.event_history.append("down")
             self.on_down_arrow_press()
         elif event.playstation_button_pressed():
-            self.event_history.append("ps_button")
+            self.event_history.append("ps")
             self.on_playstation_button_press()
         elif event.playstation_button_released():
             self.on_playstation_button_release()
         elif event.share_pressed():
-            self.event_history.append("share_button")
+            self.event_history.append("share")
             self.on_share_press()
         elif event.share_released():
             self.on_share_release()
         elif event.R3_pressed():
-            self.event_history.append("right_joystick_button")
+            self.event_history.append("R3")
             self.on_R3_press()
         elif event.R3_released():
             self.on_R3_release()
         elif event.L3_pressed():
-            self.event_history.append("left_joystick_button")
+            self.event_history.append("L3")
             self.on_L3_press()
         elif event.L3_released():
             self.on_L3_release()

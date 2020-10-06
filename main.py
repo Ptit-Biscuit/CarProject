@@ -1,10 +1,8 @@
 from subprocess import call
 from car_controller import CarController
 
-
 # Konami code
-konami_code = ["up_arrow_button", "up_arrow_button", "down_arrow_button", "down_arrow_button", "left_arrow_button",
-               "right_arrow_button", "left_arrow_button", "right_arrow_button", "share_button", "options_button"]
+konami_code = ["up", "up", "down", "down", "left", "right", "left", "right", "share", "options"]
 
 
 def konami_callback():
@@ -12,7 +10,7 @@ def konami_callback():
 
 
 def special_inputs():
-    return [[konami_code, konami_callback, 0]]
+    return [{"inputs": konami_code, "callback": konami_callback}]
 
 
 def on_disconnect():

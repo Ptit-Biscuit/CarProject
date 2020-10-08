@@ -1,4 +1,3 @@
-import threading
 from car import Car
 from controller import Controller
 
@@ -7,43 +6,32 @@ def map_from_to(x, a, b, c, d):
     return (x - a) / (b - a) * (d - c) + c
 
 
-def throttle_run(car, throttle, regulator):
-    while True:
-        if regulator.wait(2):
-            car.throttle(throttle())
-
-
 class CarController(Controller):
 
     def __init__(self, **kwargs):
         Controller.__init__(self, **kwargs)
-        self.car = Car()
+        self.car = Car(controller_connected=self.is_connected)
         self.min_value = -32767
         self.max_value = 32767
-        self.throttle = -1
-        self.limiter = -1
-        self.regulator = threading.Event()
-        self.regulator_thread = threading.Thread(target=throttle_run, args=(self.car, lambda: self.throttle, self.regulator))
-        self.regulator_thread.start()
 
     # R1 for limiter
     def on_R1_press(self):
-        self.limiter = self.throttle
-        self.regulator.clear()
+        self.car.limiter = self.car.speed
+        self.car.regulator.clear()
 
     # L1 for regulator
     def on_L1_press(self):
-        if self.regulator.is_set():
-            self.regulator.clear()
+        if self.car.regulator.is_set():
+            self.car.regulator.clear()
         else:
-            self.regulator.set()
-        self.limiter = -1
+            self.car.regulator.set()
+        self.car.limiter = -1
 
     # R2 for throttle
     def on_R2_press(self, value):
-        if not self.regulator.is_set():
-            self.throttle = map_from_to(value, self.min_value, self.max_value, 0.2, 1)
-            self.car.throttle(self.throttle if self.limiter == -1 else min(self.throttle, self.limiter))
+        if not self.car.regulator.is_set():
+            self.car.speed = map_from_to(value, self.min_value, self.max_value, 0.2, 1)
+            self.car.throttle(self.car.speed if self.car.limiter == -1 else min(self.car.speed, self.car.limiter))
 
     def on_R2_release(self):
         self.car.stop()

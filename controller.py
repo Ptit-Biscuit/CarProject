@@ -5,10 +5,6 @@ from actions import Actions
 from event import Event
 
 
-def check_for(sub, full, start_index):
-    return [start for start in range(start_index, len(full) - len(sub) + 1) if sub == full[start:start + len(sub)]]
-
-
 class Controller(Actions):
 
     def __init__(self, interface, event_definition=None, event_format=None):
@@ -60,6 +56,10 @@ class Controller(Actions):
                 time.sleep(1)
             print("Timeout({} sec). Interface not available.".format(timeout))
             exit(1)
+
+        def check_for(sub, full, start_index):
+            return [start for start in range(start_index, len(full) - len(sub) + 1) if
+                    sub == full[start:start + len(sub)]]
 
         wait_for_interface()
         try:

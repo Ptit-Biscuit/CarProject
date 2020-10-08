@@ -22,7 +22,6 @@ class Controller(Actions):
         self.is_connected = False
         self.interface = interface
         self.debug = False  # If you want to see raw event stream, set this to True.
-        self.black_listed_buttons = []  # set a list of blocked buttons if you don't want to process their events
         self.event_definition = event_definition if event_definition else Event
         self.event_format = event_format if event_format else "LhBB"
         self.event_size = struct.calcsize(self.event_format)
@@ -74,10 +73,10 @@ class Controller(Actions):
                 if self.debug:
                     print("button_id: {} button_type: {} value: {}".format(button_id, button_type, value))
                 self.__handle_event(button_id=button_id, button_type=button_type, value=value)
-                for i, special_input in enumerate(special_inputs):
-                    check = check_for(special_input["inputs"], self.event_history, special_inputs_indexes[i])
+                for index, special_input in enumerate(special_inputs):
+                    check = check_for(special_input["inputs"], self.event_history, special_inputs_indexes[index])
                     if len(check) != 0:
-                        special_inputs_indexes[i] = check[0] + 1
+                        special_inputs_indexes[index] = check[0] + 1
                         special_input["callback"]()
                 event = _file.read(self.event_size)
         except (KeyboardInterrupt, IOError) as e:

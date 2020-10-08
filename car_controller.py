@@ -1,9 +1,16 @@
+import threading
 from car import Car
 from controller import Controller
 
 
 def map_from_to(x, a, b, c, d):
     return (x - a) / (b - a) * (d - c) + c
+
+
+def throttle_run(car, throttle, regulator):
+    while regulator.isSet():
+        print("Throttle thread active, throttle: {}".format(throttle))
+        car.throttle(throttle)
 
 
 class CarController(Controller):
@@ -15,25 +22,24 @@ class CarController(Controller):
         self.max_value = 32767
         self.throttle = -1
         self.limiter = False
-        self.regulator = False
+        self.regulator = threading.Event()
+        self.regulator_thread = threading.Thread(target=throttle_run, args=(self.car, self.throttle, self.regulator))
+        self.regulator_thread.start()
 
     # R1 for limiter
     def on_R1_press(self):
         self.limiter = not self.limiter
-        self.regulator = False
+        self.regulator.clear()
 
     # L1 for regulator
     def on_L1_press(self):
-        self.regulator = not self.regulator
+        self.regulator.set()
         self.limiter = False
 
     # R2 for throttle
     def on_R2_press(self, value):
-        self.throttle = map_from_to(value, self.min_value, self.max_value, 0, 1 if not self.limiter else self.throttle)
-        print("value: {} throttle: {}".format(value, self.throttle))
+        self.throttle = map_from_to(value, self.min_value, self.max_value, 0, 1 if not self.limiter else 1 - self.throttle)
         self.car.throttle(self.throttle)
-        if self.regulator:
-            self.on_R2_press(value)
 
     def on_R2_release(self):
         self.car.stop()

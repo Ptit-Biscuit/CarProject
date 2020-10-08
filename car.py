@@ -15,8 +15,8 @@ class Car:
         self.front_left_wheel.value = value
 
     def reverse(self, value):
-        self.back_right_wheel = value
-        self.back_left_wheel = value
+        self.back_right_wheel.value = value
+        self.back_left_wheel.value = value
 
     def steer(self, value):
         self.steering_servo.angle = value

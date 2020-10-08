@@ -8,10 +8,9 @@ def map_from_to(x, a, b, c, d):
 
 
 def throttle_run(car, throttle, regulator):
-    while True:
-        if regulator.is_set():
-            print("Throttle regulator active, throttle: {}".format(throttle))
-            car.throttle(throttle)
+    while not regulator.wait():
+        print("Throttle regulator active, throttle: {}".format(throttle))
+        car.throttle(throttle)
 
 
 class CarController(Controller):
@@ -21,7 +20,7 @@ class CarController(Controller):
         self.car = Car()
         self.min_value = -32767
         self.max_value = 32767
-        self.throttle = -1
+        self.throttle = 0
         self.limiter = False
         self.regulator = threading.Event()
         self.regulator_thread = threading.Thread(target=throttle_run, args=(self.car, self.throttle, self.regulator))
@@ -40,6 +39,7 @@ class CarController(Controller):
     # R2 for throttle
     def on_R2_press(self, value):
         self.throttle = map_from_to(value, self.min_value, self.max_value, 0.2, 1 if not self.limiter else 1 - self.throttle)
+        print("Throttle: {}".format(self.throttle))
         self.car.throttle(self.throttle)
 
     def on_R2_release(self):

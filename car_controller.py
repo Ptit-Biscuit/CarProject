@@ -8,9 +8,10 @@ def map_from_to(x, a, b, c, d):
 
 
 def throttle_run(car, throttle, regulator):
-    while regulator.isSet():
-        print("Throttle thread active, throttle: {}".format(throttle))
-        car.throttle(throttle)
+    while True:
+        if regulator.is_set():
+            print("Throttle regulator active, throttle: {}".format(throttle))
+            car.throttle(throttle)
 
 
 class CarController(Controller):
@@ -38,7 +39,7 @@ class CarController(Controller):
 
     # R2 for throttle
     def on_R2_press(self, value):
-        self.throttle = map_from_to(value, self.min_value, self.max_value, 0, 1 if not self.limiter else 1 - self.throttle)
+        self.throttle = map_from_to(value, self.min_value, self.max_value, 0.2, 1 if not self.limiter else 1 - self.throttle)
         self.car.throttle(self.throttle)
 
     def on_R2_release(self):
@@ -46,7 +47,7 @@ class CarController(Controller):
 
     # L2 for reverse
     def on_L2_press(self, value):
-        self.car.reverse(map_from_to(value, self.min_value, self.max_value, 0, 1))
+        self.car.reverse(map_from_to(value, self.min_value, self.max_value, 0.2, 1))
 
     def on_L2_release(self):
         self.car.stop()

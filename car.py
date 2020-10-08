@@ -10,11 +10,11 @@ class Car:
         self.back_left_wheel = Servo(26)
         self.steering_servo = AngularServo(21, min_angle=-45, max_angle=45)
 
-    def forward(self, value):
+    def throttle(self, value):
         self.front_right_wheel.value = value
         self.front_left_wheel.value = value
 
-    def backward(self, value):
+    def reverse(self, value):
         self.back_right_wheel = value
         self.back_left_wheel = value
 
